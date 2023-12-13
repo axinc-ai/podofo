@@ -180,11 +180,12 @@ endif()
 find_package(Freetype REQUIRED)
 message("Found freetype library at ${FREETYPE_LIBRARIES}, headers ${FREETYPE_INCLUDE_DIRS}")
 
-find_package(Fontconfig)
-if(Fontconfig_FOUND)
-    set(PODOFO_HAVE_FONTCONFIG TRUE)
-    message("Found fontconfig headers in ${Fontconfig_INCLUDE_DIRS}, library at ${Fontconfig_LIBRARIES}")
-endif()
+set(PODOFO_HAVE_FONTCONFIG FALSE)
+# find_package(Fontconfig)
+# if(Fontconfig_FOUND)
+#     set(PODOFO_HAVE_FONTCONFIG TRUE)
+#     message("Found fontconfig headers in ${Fontconfig_INCLUDE_DIRS}, library at ${Fontconfig_LIBRARIES}")
+# endif()
 
 if(WIN32 AND NOT PODOFO_HAVE_FONTCONFIG OR PODOFO_WANT_WIN32GDI)
     # Fallback to GDI if FontConfig is missing in Windows
