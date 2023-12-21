@@ -136,8 +136,8 @@ endif()
 find_package(ZLIB REQUIRED)
 message("Found zlib headers in ${ZLIB_INCLUDE_DIR}, library at ${ZLIB_LIBRARIES}")
 
-find_package(OpenSSL REQUIRED)
-message("OPENSSL_LIBRARIES: ${OPENSSL_LIBRARIES}")
+# find_package(OpenSSL REQUIRED)
+# message("OPENSSL_LIBRARIES: ${OPENSSL_LIBRARIES}")
 
 find_package(Libidn)
 
@@ -201,7 +201,7 @@ message("Found libxml2 library at ${LIBXML2_LIBRARIES}, headers ${LIBXML2_INCLUD
 # platform sensible, so don't modify the current order
 
 set(PODOFO_HEADERS_DEPENDS)
-set(PODOFO_LIB_DEPENDS OpenSSL::SSL)
+# set(PODOFO_LIB_DEPENDS OpenSSL::SSL)
 if(Fontconfig_FOUND)
     list(APPEND PODOFO_LIB_DEPENDS Fontconfig::Fontconfig)
 endif()
