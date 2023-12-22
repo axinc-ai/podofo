@@ -107,12 +107,10 @@ void PoDoFo::PdfEncrypt::DecryptTo(charbuff &out, const bufferview &view, const 
 
 PoDoFo::PdfEncrypt::PdfEncrypt()
 {
-    throw("Unimplemented");
 }
 
 PoDoFo::PdfEncrypt::PdfEncrypt(const PdfEncrypt &rhs)
 {
-    throw("Unimplemented");
 }
 
 bool PoDoFo::PdfEncrypt::CheckKey(unsigned char key1[32], unsigned char key2[32])
@@ -122,12 +120,10 @@ bool PoDoFo::PdfEncrypt::CheckKey(unsigned char key1[32], unsigned char key2[32]
 
 PoDoFo::PdfEncryptSHABase::PdfEncryptSHABase()
 {
-    throw("Unimplemented");
 }
 
 PoDoFo::PdfEncryptSHABase::PdfEncryptSHABase(const PdfEncrypt &rhs)
 {
-    throw("Unimplemented");
 }
 
 void PoDoFo::PdfEncryptSHABase::CreateEncryptionDictionary(PdfDictionary &dictionary) const
@@ -172,12 +168,10 @@ void PoDoFo::PdfEncryptSHABase::PreprocessPassword(const std::string_view &passw
 
 PoDoFo::PdfEncryptAESBase::~PdfEncryptAESBase()
 {
-    throw("Unimplemented");
 }
 
 PoDoFo::PdfEncryptAESBase::PdfEncryptAESBase()
 {
-    throw("Unimplemented");
 }
 
 void PoDoFo::PdfEncryptAESBase::BaseDecrypt(const unsigned char *key, unsigned keylen, const unsigned char *iv, const unsigned char *textin, size_t textlen, unsigned char *textout, size_t &textoutlen) const
@@ -192,12 +186,10 @@ void PoDoFo::PdfEncryptAESBase::BaseEncrypt(const unsigned char *key, unsigned k
 
 PoDoFo::PdfEncryptRC4Base::~PdfEncryptRC4Base()
 {
-    throw("Unimplemented");
 }
 
 PoDoFo::PdfEncryptRC4Base::PdfEncryptRC4Base()
 {
-    throw("Unimplemented");
 }
 
 void PoDoFo::PdfEncryptRC4Base::RC4(const unsigned char *key, unsigned keylen, const unsigned char *textin, size_t textlen, unsigned char *textout, size_t textoutlen) const
@@ -207,12 +199,10 @@ void PoDoFo::PdfEncryptRC4Base::RC4(const unsigned char *key, unsigned keylen, c
 
 PoDoFo::PdfEncryptMD5Base::PdfEncryptMD5Base()
 {
-    throw("Unimplemented");
 }
 
 PoDoFo::PdfEncryptMD5Base::PdfEncryptMD5Base(const PdfEncrypt &rhs)
 {
-    throw("Unimplemented");
 }
 
 void PoDoFo::PdfEncryptMD5Base::CreateEncryptionDictionary(PdfDictionary &dictionary) const
@@ -222,7 +212,6 @@ void PoDoFo::PdfEncryptMD5Base::CreateEncryptionDictionary(PdfDictionary &dictio
 
 PdfString PoDoFo::PdfEncryptMD5Base::GetMD5String(const unsigned char *buffer, unsigned length)
 {
-    throw("Unimplemented");
 }
 
 void PoDoFo::PdfEncryptMD5Base::GetMD5Binary(const unsigned char *data, unsigned length, unsigned char *digest)
@@ -262,17 +251,14 @@ void PoDoFo::PdfEncryptMD5Base::CreateObjKey(unsigned char objkey[16], unsigned 
 
 PoDoFo::PdfEncryptAESV2::PdfEncryptAESV2(PdfString oValue, PdfString uValue, PdfPermissions pValue, bool bEncryptMetadata)
 {
-    throw("Unimplemented");
 }
 
 PoDoFo::PdfEncryptAESV2::PdfEncryptAESV2(const std::string_view &userPassword, const std::string_view &ownerPassword, PdfPermissions protection)
 {
-    throw("Unimplemented");
 }
 
 PoDoFo::PdfEncryptAESV2::PdfEncryptAESV2(const PdfEncrypt &rhs)
 {
-    throw("Unimplemented");
 }
 
 std::unique_ptr<InputStream> PoDoFo::PdfEncryptAESV2::CreateEncryptionInputStream(InputStream &inputStream, size_t inputLen, const PdfReference &objref)
@@ -317,17 +303,14 @@ bool PoDoFo::PdfEncryptAESV2::Authenticate(const std::string_view &password, con
 
 PoDoFo::PdfEncryptAESV3::PdfEncryptAESV3(PdfString oValue, PdfString oeValue, PdfString uValue, PdfString ueValue, PdfPermissions pValue, PdfString permsValue, PdfAESV3Revision rev)
 {
-    throw("Unimplemented");
 }
 
 PoDoFo::PdfEncryptAESV3::PdfEncryptAESV3(const std::string_view &userPassword, const std::string_view &ownerPassword, PdfAESV3Revision rev, PdfPermissions protection)
 {
-    throw("Unimplemented");
 }
 
 PoDoFo::PdfEncryptAESV3::PdfEncryptAESV3(const PdfEncrypt &rhs)
 {
-    throw("Unimplemented");
 }
 
 std::unique_ptr<InputStream> PoDoFo::PdfEncryptAESV3::CreateEncryptionInputStream(InputStream &inputStream, size_t inputLen, const PdfReference &objref)
@@ -372,17 +355,14 @@ void PoDoFo::PdfEncryptAESV3::GenerateEncryptionKey(const std::string_view &docu
 
 PoDoFo::PdfEncryptRC4::PdfEncryptRC4(PdfString oValue, PdfString uValue, PdfPermissions pValue, int rValue, PdfEncryptAlgorithm algorithm, int length, bool encryptMetadata)
 {
-    throw("Unimplemented");
 }
 
 PoDoFo::PdfEncryptRC4::PdfEncryptRC4(const std::string_view &userPassword, const std::string_view &ownerPassword, PdfPermissions protection, PdfEncryptAlgorithm algorithm, PdfKeyLength keyLength)
 {
-    throw("Unimplemented");
 }
 
 PoDoFo::PdfEncryptRC4::PdfEncryptRC4(const PdfEncrypt &rhs)
 {
-    throw("Unimplemented");
 }
 
 void PoDoFo::PdfEncryptRC4::Encrypt(const char *inStr, size_t inLen, const PdfReference &objref, char *outStr, size_t outLen) const
