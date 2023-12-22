@@ -118,6 +118,8 @@ bool PoDoFo::PdfEncrypt::CheckKey(unsigned char key1[32], unsigned char key2[32]
     throw("Unimplemented");
 }
 
+#ifdef PODOFO_HAVE_LIBIDN
+
 PoDoFo::PdfEncryptSHABase::PdfEncryptSHABase()
 {
 }
@@ -165,6 +167,8 @@ void PoDoFo::PdfEncryptSHABase::PreprocessPassword(const std::string_view &passw
 {
     throw("Unimplemented");
 }
+
+#endif // PODOFO_HAVE_LIBIDN
 
 PoDoFo::PdfEncryptAESBase::~PdfEncryptAESBase()
 {
@@ -301,6 +305,8 @@ bool PoDoFo::PdfEncryptAESV2::Authenticate(const std::string_view &password, con
     throw("Unimplemented");
 }
 
+#ifdef PODOFO_HAVE_LIBIDN
+
 PoDoFo::PdfEncryptAESV3::PdfEncryptAESV3(PdfString oValue, PdfString oeValue, PdfString uValue, PdfString ueValue, PdfPermissions pValue, PdfString permsValue, PdfAESV3Revision rev)
 {
 }
@@ -352,6 +358,8 @@ void PoDoFo::PdfEncryptAESV3::GenerateEncryptionKey(const std::string_view &docu
 {
     throw("Unimplemented");
 }
+
+#endif // PODOFO_HAVE_LIBIDN
 
 PoDoFo::PdfEncryptRC4::PdfEncryptRC4(PdfString oValue, PdfString uValue, PdfPermissions pValue, int rValue, PdfEncryptAlgorithm algorithm, int length, bool encryptMetadata)
 {
