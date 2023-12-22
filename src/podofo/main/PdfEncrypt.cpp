@@ -216,6 +216,7 @@ void PoDoFo::PdfEncryptMD5Base::CreateEncryptionDictionary(PdfDictionary &dictio
 
 PdfString PoDoFo::PdfEncryptMD5Base::GetMD5String(const unsigned char *buffer, unsigned length)
 {
+    throw("Unimplemented");
 }
 
 void PoDoFo::PdfEncryptMD5Base::GetMD5Binary(const unsigned char *data, unsigned length, unsigned char *digest)
