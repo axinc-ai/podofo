@@ -142,6 +142,8 @@ string_view PdfError::ErrorName(PdfErrorCode code)
             return "PdfErrorCode::UnsupportedFilter"sv;
         case PdfErrorCode::UnsupportedFontFormat:               ///< This font format is not supported by PoDoFo.
             return "PdfErrorCode::UnsupportedFontFormat"sv;
+        case PdfErrorCode::UnsupportedEncryptedFile:               ///< This font format is not supported by PoDoFo.
+            return "PdfErrorCode::UnsupportedEncryptedFile"sv;
         case PdfErrorCode::ActionAlreadyPresent:
             return "PdfErrorCode::ActionAlreadyPresent"sv;
         case PdfErrorCode::WrongDestinationType:
@@ -244,6 +246,8 @@ string_view PdfError::ErrorMessage(PdfErrorCode code)
             break;
         case PdfErrorCode::UnsupportedFontFormat:
             return "This font format is not supported by PoDoFo."sv;
+        case PdfErrorCode::UnsupportedEncryptedFile:
+            return "Encrypted file is not supported."sv;
         case PdfErrorCode::DestinationAlreadyPresent:
         case PdfErrorCode::ActionAlreadyPresent:
             return "Outlines can have either destinations or actions."sv;

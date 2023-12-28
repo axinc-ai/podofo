@@ -66,6 +66,7 @@ enum class PdfErrorCode
 
     UnsupportedFilter,        ///< The requested filter is not yet implemented.
     UnsupportedFontFormat,    ///< This font format is not supported by PoDoFo.
+    UnsupportedEncryptedFile, ///< Encrypted file is not supported.
     ActionAlreadyPresent,     ///< An Action was already present when trying to add a Destination
     WrongDestinationType,     ///< The requested field is not available for the given destination type
 
