@@ -57,6 +57,9 @@ public:
 private:
     static PdfEncodingMapConstPtr createEncodingMap(
         const PdfObject& obj, const PdfFontMetrics& metrics);
+    static PdfEncodingMapConstPtr createEncodingMapForCIDFont(
+        const PdfObject& obj, const PdfObject& encodingObj);
+
 
 private:
     PdfEncodingFactory() = delete;

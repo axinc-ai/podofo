@@ -452,3 +452,41 @@ void readNextVariantSequence(PdfPostScriptTokenizer& tokenizer, InputStreamDevic
         }
     }
 }
+
+GetToUtf32Table PdfCMapEncoding::getToUtf32Table = nullptr;
+
+void PdfCMapEncoding::RegisterCallback(const GetToUtf32Table callback)
+{
+    PdfCMapEncoding::getToUtf32Table = callback;
+}
+
+unique_ptr<PdfEncodingMap> PdfCMapEncoding::CreateForAdobeJapan1(const PdfObject& encodingObj)
+{
+    PdfCharCodeMap map;
+    
+    if (PdfCMapEncoding::getToUtf32Table == nullptr)
+    {
+        return nullptr;
+    }
+
+    const std::string encoding = encodingObj.GetName().GetRawData();
+    const CodeToUtf32beTable* toUtf32Table = PdfCMapEncoding::getToUtf32Table(encoding);
+    
+    if (toUtf32Table == nullptr)
+    {
+        return nullptr;
+    }
+    
+    for (int i = 0; toUtf32Table[i].codeSize != 0xff; i++) {
+        unsigned char codeSize = toUtf32Table[i].codeSize;
+        uint32_t code = toUtf32Table[i].code;
+        char32_t utf32be = toUtf32Table[i].utf32be;
+        vector<char32_t> mappedCodes;
+        mappedCodes.push_back(utf32be);
+        pushMapping(map, { code, codeSize }, mappedCodes);
+    }
+
+    auto mapLimits = map.GetLimits();
+
+    return unique_ptr<PdfCMapEncoding>(new PdfCMapEncoding(std::move(map), mapLimits));
+}

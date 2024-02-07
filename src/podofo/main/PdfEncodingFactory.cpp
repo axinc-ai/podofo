@@ -43,7 +43,17 @@ PdfEncoding PdfEncodingFactory::CreateEncoding(const PdfObject& fontObj, const P
     PdfEncodingMapConstPtr toUnicode;
     auto toUnicodeObj = fontObj.GetDictionary().FindKey("ToUnicode");
     if (toUnicodeObj != nullptr)
+    {
         toUnicode = createEncodingMap(*toUnicodeObj, metrics);
+    }
+    else
+    {
+        auto descendantFontsObj = fontObj.GetDictionary().FindKey("DescendantFonts");
+        if (descendantFontsObj != nullptr)
+        {
+            toUnicode = createEncodingMapForCIDFont(*descendantFontsObj, *encodingObj);
+        }
+    }
 
     if (encoding == nullptr)
     {
@@ -121,4 +131,33 @@ PdfEncoding PdfEncodingFactory::CreateMacRomanEncoding()
 PdfEncoding PdfEncodingFactory::CreateMacExpertEncoding()
 {
     return PdfEncoding(MacExpertEncodingId, PdfEncodingMapFactory::MacExpertEncodingInstance());
+}
+
+PdfEncodingMapConstPtr PdfEncodingFactory::createEncodingMapForCIDFont(
+    const PdfObject& obj, const PdfObject& encodingObj)
+{
+    if (obj.IsArray())
+    {
+        auto& array = obj.GetArray();
+        auto cidFontObj = array.FindAt(0);
+        auto& cidFontDict = cidFontObj->GetDictionary();
+        auto cidSystemInfoObj = cidFontDict.FindKey("CIDSystemInfo");
+        auto& cidSystemInfoDict = cidSystemInfoObj->GetDictionary();
+        auto registryObj = cidSystemInfoDict.FindKey("Registry");
+        auto orderingObj = cidSystemInfoDict.FindKey("Ordering");
+        auto supplementObj = cidSystemInfoDict.FindKey("Supplement");
+        if ((registryObj == nullptr) || (orderingObj == nullptr) || (supplementObj == nullptr))
+        {
+            return nullptr;
+        }
+        auto& registry = registryObj->GetString().GetString();
+        auto& ordering = orderingObj->GetString().GetString();
+        auto fontKind = registry + "-" + ordering;
+        if (fontKind == "Adobe-Japan1")
+        {
+            return PdfCMapEncoding::CreateForAdobeJapan1(encodingObj);
+        }
+    }
+
+    return nullptr;
 }

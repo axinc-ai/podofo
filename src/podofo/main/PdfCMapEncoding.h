@@ -9,6 +9,15 @@
 
 #include "PdfEncodingMap.h"
 
+typedef struct CodeToUtf32beTable
+{
+    unsigned char codeSize;
+    uint32_t code;
+    char32_t utf32be;
+} CodeToUtf32beTable;
+
+typedef CodeToUtf32beTable* (*GetToUtf32Table)(const std::string);
+
 namespace PoDoFo
 {
     class PdfObject;
@@ -27,6 +36,10 @@ namespace PoDoFo
         /** Construct an encoding map from an object
          */
         static std::unique_ptr<PdfEncodingMap> CreateFromObject(const PdfObject& cmapObj);
+
+        static GetToUtf32Table getToUtf32Table;
+        static void RegisterCallback(const GetToUtf32Table callback);
+        static std::unique_ptr<PdfEncodingMap> CreateForAdobeJapan1(const PdfObject& encodingObj);
 
     private:
         PdfCMapEncoding(PdfCharCodeMap&& map, const PdfEncodingLimits& limits);
