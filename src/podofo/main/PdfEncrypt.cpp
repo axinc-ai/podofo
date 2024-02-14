@@ -31,6 +31,15 @@ PdfEncryptAlgorithm::RC4V2 |
 PdfEncryptAlgorithm::AESV2;
 #endif // PODOFO_HAVE_LIBIDN
 
+static void MD5Final(unsigned char * dst, unsigned char *src){
+    for (int i = 0; i < MD5_DIGEST_LENGTH; i+=4){
+        dst[i + 0] = src [i + 3];
+        dst[i + 1] = src [i + 2];
+        dst[i + 2] = src [i + 1];
+        dst[i + 3] = src [i + 0];
+    }
+}
+
 /** A class that can encrypt/decrpyt streamed data block wise
  *  This is used in the input and output stream encryption implementation.
  *  Only the RC4 encryption algorithm is supported
@@ -600,9 +609,7 @@ void PoDoFo::PdfEncryptMD5Base::GetMD5Binary(const unsigned char *data, unsigned
     md5::digest_type digest2;
     hash.process_bytes(data, length);
     hash.get_digest(digest2);
-    for (int i = 0; i < MD5_DIGEST_LENGTH; i++){
-        digest[i] = digest2[i];
-    }
+    MD5Final(digest, (unsigned char*)digest2);
     printf("%s %d\n", __FUNCTION__, __LINE__);
     //PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
 }
@@ -649,9 +656,7 @@ void PoDoFo::PdfEncryptMD5Base::ComputeOwnerKey(const unsigned char userPad[32],
 
     hash.process_bytes(ownerPad, 32);
     hash.get_digest(digest2);
-    for (int i = 0; i < MD5_DIGEST_LENGTH; i++){
-        digest[i] = digest2[i];
-    }
+    MD5Final(digest, (unsigned char*)digest2);
 
     if ((revision == 3) || (revision == 4))
     {
@@ -675,9 +680,7 @@ void PoDoFo::PdfEncryptMD5Base::ComputeOwnerKey(const unsigned char userPad[32],
             md5 hash2;
             hash2.process_bytes(ownerPad, 32);
             hash2.get_digest(digest2);
-            for (int i = 0; i < MD5_DIGEST_LENGTH; i++){
-                digest[i] = digest2[i];
-            }
+            MD5Final(digest, (unsigned char*)digest2);
         }
         std::memcpy(ownerKey, userPad, 32);
         for (unsigned i = 0; i < 20; ++i)
@@ -794,9 +797,13 @@ void PoDoFo::PdfEncryptMD5Base::ComputeEncryptionKey(const std::string_view &doc
     //if (rc != 1)
     //    PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InternalLogic, "Error MD5-hashing data");
     hash.get_digest(digest2);
-    for (int i = 0; i < MD5_DIGEST_LENGTH; i++){
-        digest[i] = digest2[i];
+    MD5Final(digest, (unsigned char*)digest2);
+
+    printf("digest1\n");
+    for(int i = 0; i < MD5_DIGEST_LENGTH; i++){
+        printf("%02x ", digest[i]);
     }
+    printf("\n");
 
     // only use the really needed bits as input for the hash
     if (revision == 3 || revision == 4)
@@ -819,11 +826,15 @@ void PoDoFo::PdfEncryptMD5Base::ComputeEncryptionKey(const std::string_view &doc
             md5 hash2;
             hash2.process_bytes(digest, m_keyLength);
             hash2.get_digest(digest2);
-            for (int i = 0; i < MD5_DIGEST_LENGTH; i++){
-                digest[i] = digest2[i];
-            }
+            MD5Final(digest, (unsigned char*)digest2);
         }
     }
+
+    printf("digest2\n");
+    for(int i = 0; i < MD5_DIGEST_LENGTH; i++){
+        printf("%02x ", digest[i]);
+    }
+    printf("\n");
 
     std::memcpy(m_encryptionKey, digest, m_keyLength);
 
@@ -856,9 +867,13 @@ void PoDoFo::PdfEncryptMD5Base::ComputeEncryptionKey(const std::string_view &doc
         //    PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InternalLogic, "Error MD5-hashing data");
 
         hash3.get_digest(digest2);
-        for (int i = 0; i < MD5_DIGEST_LENGTH; i++){
-            digest[i] = digest2[i];
+        MD5Final(digest, (unsigned char*)digest2);
+
+        printf("digest3\n");
+        for(int i = 0; i < MD5_DIGEST_LENGTH; i++){
+            printf("%02x ", digest[i]);
         }
+        printf("\n");
 
         std::memcpy(userKey, digest, 16);
         for (k = 16; k < 32; k++)
@@ -872,11 +887,23 @@ void PoDoFo::PdfEncryptMD5Base::ComputeEncryptionKey(const std::string_view &doc
             }
 
             RC4(digest, m_keyLength, userKey, 16, userKey, 16);
+
+            printf("RC4 step %d\n", k);
+            for(int i = 0; i < 16; i++){
+                printf("%02x ", userKey[i]);
+            }
+            printf("\n");
         }
     }
     else
     {
         RC4(m_encryptionKey, m_keyLength, padding, 32, userKey, 32);
+
+        printf("RC4\n");
+        for(int i = 0; i < 16; i++){
+            printf("%02x ", userKey[i]);
+        }
+        printf("\n");
     }
 }
 
