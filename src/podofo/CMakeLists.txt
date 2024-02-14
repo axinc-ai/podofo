@@ -8,8 +8,11 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/podofo_config.h.in" "${CMAKE_CURRENT
 # Needed for <date/date.h>
 add_compile_definitions(HAS_UNCAUGHT_EXCEPTIONS=1)
 
+find_package(Boost REQUIRED)
+
 set(PODOFO_INCLUDE_DIRS
     ${CMAKE_CURRENT_BINARY_DIR}
+    ${Boost_INCLUDE_DIRS}
     "${PROJECT_SOURCE_DIR}/src"
     "${PROJECT_SOURCE_DIR}/3rdparty"
     CACHE INTERNAL "podofo include directories"
