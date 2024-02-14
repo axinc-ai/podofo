@@ -818,6 +818,12 @@ void PdfEncryptMD5Base::ComputeEncryptionKey(const string_view& documentId,
     if (rc != 1)
         PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InternalLogic, "Error MD5-hashing data");
 
+    printf("digest1\n");
+    for(int i = 0; i < MD5_DIGEST_LENGTH; i++){
+        printf("%02x ", digest[i]);
+    }
+    printf("\n");
+
     // only use the really needed bits as input for the hash
     if (revision == 3 || revision == 4)
     {
@@ -836,6 +842,12 @@ void PdfEncryptMD5Base::ComputeEncryptionKey(const string_view& documentId,
                 PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InternalLogic, "Error MD5-hashing data");
         }
     }
+
+    printf("digest2\n");
+    for(int i = 0; i < MD5_DIGEST_LENGTH; i++){
+        printf("%02x ", digest[i]);
+    }
+    printf("\n");
 
     std::memcpy(m_encryptionKey, digest, m_keyLength);
 
@@ -865,6 +877,12 @@ void PdfEncryptMD5Base::ComputeEncryptionKey(const string_view& documentId,
         for (k = 16; k < 32; k++)
             userKey[k] = 0;
 
+        printf("digest3\n");
+        for(int i = 0; i < MD5_DIGEST_LENGTH; i++){
+            printf("%02x ", digest[i]);
+        }
+        printf("\n");
+
         for (k = 0; k < 20; k++)
         {
             for (j = 0; j < m_keyLength; j++)
@@ -873,11 +891,23 @@ void PdfEncryptMD5Base::ComputeEncryptionKey(const string_view& documentId,
             }
 
             RC4(digest, m_keyLength, userKey, 16, userKey, 16);
+
+            printf("RC4 step %d\n", k);
+            for(int i = 0; i < 16; i++){
+                printf("%02x ", userKey[i]);
+            }
+            printf("\n");
         }
     }
     else
     {
         RC4(m_encryptionKey, m_keyLength, padding, 32, userKey, 32);
+
+        printf("RC4\n");
+        for(int i = 0; i < 16; i++){
+            printf("%02x ", userKey[i]);
+        }
+        printf("\n");
     }
 }
 
@@ -1069,6 +1099,21 @@ bool PdfEncryptRC4::Authenticate(const string_view& password, const string_view&
 
     // Check password: 1) as user password, 2) as owner password
     ComputeEncryptionKey(m_documentId, pswd, m_oValue, m_pValue, m_eKeyLength, m_rValue, userKey, m_EncryptMetadata);
+
+    printf("userKey\n");
+    for(int i = 0; i < 32; i++){
+        printf("%02x ", userKey[i]);
+    }
+    printf("\n");
+    printf("pswd\n");
+    for(int i = 0; i < 32; i++){
+        printf("%02x ", pswd[i]);
+    }
+    printf("\n");
+    printf("m_uValue\n");
+    for(int i = 0; i < 32; i++){
+        printf("%02x ", m_uValue[i]);
+    }
 
     success = CheckKey(userKey, m_uValue);
     if (!success)
