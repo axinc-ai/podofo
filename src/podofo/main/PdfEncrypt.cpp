@@ -561,7 +561,7 @@ void rc4_encrypt(RC4_STATE* state, const unsigned char* textin, size_t textlen, 
         state->s[state->j] = tmp;
 
         unsigned char c = (state->s[state->i] + state->s[state->j]) % 256;
-        textout[k] = textin[k] ^ c;
+        textout[k] = textin[k] ^ state->s[c];
         dataOutMoved++;
     }
 }
