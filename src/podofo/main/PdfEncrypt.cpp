@@ -1106,13 +1106,23 @@ PoDoFo::PdfEncryptRC4::PdfEncryptRC4(const PdfEncrypt &rhs)
 void PoDoFo::PdfEncryptRC4::Encrypt(const char *inStr, size_t inLen, const PdfReference &objref, char *outStr, size_t outLen) const
 {
     printf("%s %d\n", __FUNCTION__, __LINE__);
+    unsigned char objkey[MD5_DIGEST_LENGTH];
+    unsigned keylen;
+    CreateObjKey(objkey, keylen, objref);
+    this->RC4(objkey, keylen, (const unsigned char *)inStr, inLen,
+        (unsigned char*)outStr, outLen);
+    /*
     PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+    */
 }
 
 void PoDoFo::PdfEncryptRC4::Decrypt(const char *inStr, size_t inLen, const PdfReference &objref, char *outStr, size_t &outLen) const
 {
     printf("%s %d\n", __FUNCTION__, __LINE__);
+    Encrypt(inStr, inLen, objref, outStr, outLen);
+    /*
     PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+    */
 }
 
 std::unique_ptr<InputStream> PoDoFo::PdfEncryptRC4::CreateEncryptionInputStream(InputStream &inputStream, size_t inputLen, const PdfReference &objref)
@@ -1137,13 +1147,15 @@ std::unique_ptr<OutputStream> PoDoFo::PdfEncryptRC4::CreateEncryptionOutputStrea
 size_t PoDoFo::PdfEncryptRC4::CalculateStreamOffset() const
 {
     printf("%s %d\n", __FUNCTION__, __LINE__);
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+    return 0;
+    //PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
 }
 
 size_t PoDoFo::PdfEncryptRC4::CalculateStreamLength(size_t length) const
 {
     printf("%s %d\n", __FUNCTION__, __LINE__);
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+    return length;
+    //PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
 }
 
 void PoDoFo::PdfEncryptRC4::GenerateEncryptionKey(const std::string_view &documentId)
