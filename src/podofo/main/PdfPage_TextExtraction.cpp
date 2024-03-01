@@ -406,6 +406,16 @@ void PdfPage::ExtractTextTo(vector<PdfTextEntry>& entries, const string_view& pa
                     context.States.Push();
                 }
 
+                // for Image Object
+                if (m_ImageObjectCallback != nullptr)
+                {
+                    if (content.XObject->GetType() == PdfXObjectType::Image)
+                    {
+                        // ここでコールバック関数を呼び出して XObject のオブジェクトを渡す
+                        m_ImageObjectCallback(content.XObject->GetObject());
+                    }
+                }
+
                 break;
             }
             case PdfContentType::EndXObjectForm:
@@ -425,6 +435,11 @@ void PdfPage::ExtractTextTo(vector<PdfTextEntry>& entries, const string_view& pa
     // After finishing processing tokens, one entry may still
     // be inside the chunks
     context.TryAddLastEntry();
+}
+
+void PdfPage::RegisterCallback(GetImageObjectCallback callback)
+{
+    m_ImageObjectCallback = callback;
 }
 
 void addEntry(vector<PdfTextEntry> &textEntries, StringChunkList &chunks, const string_view &pattern,

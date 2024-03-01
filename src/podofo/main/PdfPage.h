@@ -15,6 +15,7 @@
 #include "PdfCanvas.h"
 #include "PdfContents.h"
 #include "PdfField.h"
+#include "PdfObject.h"
 #include "PdfResources.h"
 
 namespace PoDoFo {
@@ -39,6 +40,8 @@ struct PdfTextExtractParams
     nullable<Rect> ClipRect;
     PdfTextExtractFlags Flags;
 };
+
+typedef void (*GetImageObjectCallback)(const PdfObject);
 
 /** PdfPage is one page in the pdf document.
  *  It is possible to draw on a page using a PdfPainter object.
@@ -213,6 +216,7 @@ public:
     PdfResources& MustGetResources();
     inline PdfAnnotationCollection& GetAnnotations() { return m_Annotations; }
     inline const PdfAnnotationCollection& GetAnnotations() const { return m_Annotations; }
+    void RegisterCallback(GetImageObjectCallback callback);
 
 private:
     // To be called by PdfPageCollection
@@ -266,6 +270,7 @@ private:
     std::unique_ptr<PdfContents> m_Contents;
     std::unique_ptr<PdfResources> m_Resources;
     PdfAnnotationCollection m_Annotations;
+    GetImageObjectCallback m_ImageObjectCallback;
 };
 
 template<typename TField>

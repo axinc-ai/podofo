@@ -24,7 +24,8 @@ PdfPage::PdfPage(PdfDocument& parent, const Rect& size) :
     PdfDictionaryElement(parent, "Page"),
     m_Index(numeric_limits<unsigned>::max()),
     m_Contents(nullptr),
-    m_Annotations(*this)
+    m_Annotations(*this),
+    m_ImageObjectCallback(nullptr)
 {
     initNewPage(size);
 }
@@ -39,7 +40,8 @@ PdfPage::PdfPage(PdfObject& obj, vector<PdfObject*>&& parents) :
     m_Index(numeric_limits<unsigned>::max()),
     m_parents(std::move(parents)),
     m_Contents(nullptr),
-    m_Annotations(*this)
+    m_Annotations(*this),
+    m_ImageObjectCallback(nullptr)
 {
     auto contents = GetDictionary().FindKey("Contents");
     if (contents != nullptr)
