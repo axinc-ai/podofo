@@ -411,7 +411,6 @@ void PdfPage::ExtractTextTo(vector<PdfTextEntry>& entries, const string_view& pa
                 {
                     if (content.XObject->GetType() == PdfXObjectType::Image)
                     {
-                        // ここでコールバック関数を呼び出して XObject のオブジェクトを渡す
                         m_ImageObjectCallback(content.XObject->GetObject());
                     }
                 }
