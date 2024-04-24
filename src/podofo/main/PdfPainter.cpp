@@ -403,6 +403,30 @@ void PdfPainter::drawText(const string_view& str, double x, double y, bool isUnd
         !font.GetEncoding().IsSimpleEncoding());
 }
 
+void PdfPainter::DrawText(const string_view& str, double a, double b, double c, double d, double e, double f)
+{
+    checkStream();
+    checkStatus(StatusDefault);
+    checkFont();
+
+    PoDoFo::WriteOperator_BT(m_stream);
+    writeTextState();
+    drawText(str, a, b, c, d, e, f);
+    PoDoFo::WriteOperator_ET(m_stream);
+}
+
+void PdfPainter::drawText(const string_view& str, double a, double b, double c, double d, double e, double f)
+{
+    PoDoFo::WriteOperator_Tm(m_stream, a, b, c, d, e, f);
+
+    auto& textState = m_StateStack.Current->TextState;
+    auto& font = *textState.Font;
+    auto expStr = this->expandTabs(str);
+
+    PoDoFo::WriteOperator_Tj(m_stream, font.GetEncoding().ConvertToEncoded(str),
+        !font.GetEncoding().IsSimpleEncoding());
+}
+
 void PdfPainter::DrawTextMultiLine(const string_view& str, const Rect& rect,
     const PdfDrawTextMultiLineParams& params)
 {

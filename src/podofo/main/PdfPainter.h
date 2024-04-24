@@ -369,6 +369,18 @@ public:
     void DrawText(const std::string_view& str, double x, double y,
         PdfDrawTextStyle style = PdfDrawTextStyle::Regular);
 
+    /** Draw a single-line text string on a page using a given font object.
+     *  You have to call SetFont before calling this function.
+     *  \param str the text string which should be printed
+     *  \param a the x coordinate
+     *  \param b the y coordinate
+     *  \param c the x coordinate
+     *  \param d the y coordinate
+     *  \param e the y coordinate
+     *  \param f the y coordinate
+     */
+    void DrawText(const std::string_view& str, double a, double b, double c, double d, double e, double f);
+
     /** Draw multiline text into a rectangle doing automatic wordwrapping.
      *  The current font is used and SetFont has to be called at least once
      *  before using this function
@@ -665,6 +677,7 @@ private:
         PdfHorizontalAlignment hAlignment, PdfDrawTextStyle style);
 
     void drawText(const std::string_view& str, double x, double y, bool isUnderline, bool isStrikeThrough);
+    void drawText(const std::string_view& str, double a, double b, double c, double d, double e, double f);
 
     void drawMultiLineText(const std::string_view& str, double x, double y, double width, double height,
         PdfHorizontalAlignment hAlignment, PdfVerticalAlignment vAlignment, bool clip, bool skipSpaces,
