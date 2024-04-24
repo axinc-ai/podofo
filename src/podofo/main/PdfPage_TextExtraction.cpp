@@ -652,15 +652,18 @@ void addEntryChunk(vector<PdfTextEntry> &textEntries, StringChunkList &chunks, c
     if (rotation == nullptr || options.RawCoordinates)
     {
         textEntries.push_back(PdfTextEntry{ str, pageIndex,
-            strPosition.X, strPosition.Y, strLength, bbox });
+            strPosition.X, strPosition.Y, strLength, bbox,
+            {1.0, 0.0, 0.0, 1.0, 0.0, 0.0}, textState.PdfState.FontSize, textState.PdfState.Font->GetName() });
     }
     else
     {
         Vector2 rawp(strPosition.X, strPosition.Y);
         auto p_1 = rawp * (*rotation);
         textEntries.push_back(PdfTextEntry{ str, pageIndex,
-            p_1.X, p_1.Y, strLength, bbox });
+            p_1.X, p_1.Y, strLength, bbox,
+            {1.0, 0.0, 0.0, 1.0, 0.0, 0.0}, textState.PdfState.FontSize, textState.PdfState.Font->GetName() });
     }
+    textState.T_rm.ToArray(textEntries.back().TextMatrix);
 
     chunks.clear();
 }

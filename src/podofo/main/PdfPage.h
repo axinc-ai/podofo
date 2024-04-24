@@ -33,6 +33,9 @@ struct PdfTextEntry final
     double Y;
     double Length;
     nullable<Rect> BoundingBox;
+    double TextMatrix[6];
+    double FontSize;
+    std::string FontName;
 };
 
 struct PdfTextExtractParams
