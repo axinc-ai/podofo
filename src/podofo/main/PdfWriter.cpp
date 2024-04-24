@@ -293,12 +293,12 @@ void PdfWriter::CreateFileIdentifier(PdfString& identifier, const PdfObject& tra
     StringStreamDevice device(buffer);
     info->WriteFinal(device, m_WriteFlags, nullptr, m_buffer);
 
-    // calculate the MD5 Sum
-    identifier = PdfEncryptMD5Base::GetMD5String(reinterpret_cast<unsigned char*>(buffer.data()),
-        static_cast<unsigned>(length.GetLength()));
+    // // calculate the MD5 Sum
+    // identifier = PdfEncryptMD5Base::GetMD5String(reinterpret_cast<unsigned char*>(buffer.data()),
+    //     static_cast<unsigned>(length.GetLength()));
 
-    if (originalIdentifier != nullptr && !originalIdentifierFound)
-        *originalIdentifier = identifier;
+    // if (originalIdentifier != nullptr && !originalIdentifierFound)
+    //     *originalIdentifier = identifier;
 }
 
 void PdfWriter::SetEncryptObj(PdfObject& obj)
