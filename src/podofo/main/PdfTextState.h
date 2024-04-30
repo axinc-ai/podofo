@@ -22,6 +22,26 @@ namespace PoDoFo
         double CharSpacing = 0;
         double WordSpacing = 0;
         PdfTextRenderingMode RenderingMode = PdfTextRenderingMode::Fill;
+        struct PdfTextColor
+        {
+            struct PdfTextGrayColor
+            {
+                double Gray = -1;
+            } GrayColor;
+            struct PdfTextRGBColor
+            {
+                double R = -1;
+                double G = -1;
+                double B = -1;
+            } RGBColor;
+            struct PdfTextCMYKColor
+            {
+                double C = -1;
+                double M = -1;
+                double Y = -1;
+                double K = -1;
+            } CMYKColor;
+        } TextColor;
     };
 }
 

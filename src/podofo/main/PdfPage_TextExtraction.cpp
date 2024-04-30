@@ -380,6 +380,45 @@ void PdfPage::ExtractTextTo(vector<PdfTextEntry>& entries, const string_view& pa
                         ASSERT(context.States.PopLenient(), "Save/restore must be balanced");
                         break;
                     }
+                    case PdfOperator::g:
+                    case PdfOperator::G:
+                    {
+                        context.States.Current->PdfState.TextColor.GrayColor.Gray = content.Stack[0].GetReal();
+                        context.States.Current->PdfState.TextColor.RGBColor.R = -1;
+                        context.States.Current->PdfState.TextColor.RGBColor.G = -1;
+                        context.States.Current->PdfState.TextColor.RGBColor.B = -1;
+                        context.States.Current->PdfState.TextColor.CMYKColor.C = -1;
+                        context.States.Current->PdfState.TextColor.CMYKColor.M = -1;
+                        context.States.Current->PdfState.TextColor.CMYKColor.Y = -1;
+                        context.States.Current->PdfState.TextColor.CMYKColor.K = -1;
+                        break;
+                    }
+                    case PdfOperator::rg:
+                    case PdfOperator::RG:
+                    {
+                        context.States.Current->PdfState.TextColor.GrayColor.Gray = -1;
+                        context.States.Current->PdfState.TextColor.RGBColor.R = content.Stack[2].GetReal();
+                        context.States.Current->PdfState.TextColor.RGBColor.G = content.Stack[1].GetReal();
+                        context.States.Current->PdfState.TextColor.RGBColor.B = content.Stack[0].GetReal();
+                        context.States.Current->PdfState.TextColor.CMYKColor.C = -1;
+                        context.States.Current->PdfState.TextColor.CMYKColor.M = -1;
+                        context.States.Current->PdfState.TextColor.CMYKColor.Y = -1;
+                        context.States.Current->PdfState.TextColor.CMYKColor.K = -1;
+                        break;
+                    }
+                    case PdfOperator::k:
+                    case PdfOperator::K:
+                    {
+                        context.States.Current->PdfState.TextColor.GrayColor.Gray = -1;
+                        context.States.Current->PdfState.TextColor.RGBColor.R = -1;
+                        context.States.Current->PdfState.TextColor.RGBColor.G = -1;
+                        context.States.Current->PdfState.TextColor.RGBColor.B = -1;
+                        context.States.Current->PdfState.TextColor.CMYKColor.C = content.Stack[3].GetReal();
+                        context.States.Current->PdfState.TextColor.CMYKColor.M = content.Stack[2].GetReal();
+                        context.States.Current->PdfState.TextColor.CMYKColor.Y = content.Stack[1].GetReal();
+                        context.States.Current->PdfState.TextColor.CMYKColor.K = content.Stack[0].GetReal();
+                        break;
+                    }
                     default:
                     {
                         // Ignore all the other operators
@@ -653,7 +692,12 @@ void addEntryChunk(vector<PdfTextEntry> &textEntries, StringChunkList &chunks, c
     {
         textEntries.push_back(PdfTextEntry{ str, pageIndex,
             strPosition.X, strPosition.Y, strLength, bbox,
-            {1.0, 0.0, 0.0, 1.0, 0.0, 0.0}, textState.PdfState.FontSize, textState.PdfState.Font->GetName() });
+            {1.0, 0.0, 0.0, 1.0, 0.0, 0.0}, textState.PdfState.FontSize, textState.PdfState.Font->GetName(),
+            {
+                {textState.PdfState.TextColor.GrayColor.Gray},
+                {textState.PdfState.TextColor.RGBColor.R, textState.PdfState.TextColor.RGBColor.G, textState.PdfState.TextColor.RGBColor.B},
+                {textState.PdfState.TextColor.CMYKColor.C, textState.PdfState.TextColor.CMYKColor.M, textState.PdfState.TextColor.CMYKColor.Y, textState.PdfState.TextColor.CMYKColor.K}
+            }});
     }
     else
     {
@@ -661,7 +705,12 @@ void addEntryChunk(vector<PdfTextEntry> &textEntries, StringChunkList &chunks, c
         auto p_1 = rawp * (*rotation);
         textEntries.push_back(PdfTextEntry{ str, pageIndex,
             p_1.X, p_1.Y, strLength, bbox,
-            {1.0, 0.0, 0.0, 1.0, 0.0, 0.0}, textState.PdfState.FontSize, textState.PdfState.Font->GetName() });
+            {1.0, 0.0, 0.0, 1.0, 0.0, 0.0}, textState.PdfState.FontSize, textState.PdfState.Font->GetName(),
+            {
+                {textState.PdfState.TextColor.GrayColor.Gray},
+                {textState.PdfState.TextColor.RGBColor.R, textState.PdfState.TextColor.RGBColor.G, textState.PdfState.TextColor.RGBColor.B},
+                {textState.PdfState.TextColor.CMYKColor.C, textState.PdfState.TextColor.CMYKColor.M, textState.PdfState.TextColor.CMYKColor.Y, textState.PdfState.TextColor.CMYKColor.K}
+            }});
     }
     textState.T_rm.ToArray(textEntries.back().TextMatrix);
 

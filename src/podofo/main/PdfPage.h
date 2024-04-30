@@ -36,6 +36,26 @@ struct PdfTextEntry final
     double TextMatrix[6];
     double FontSize;
     std::string FontName;
+    struct PdfTextColor
+    {
+        struct PdfTextGrayColor
+        {
+            double Gray = -1;
+        } GrayColor;
+        struct PdfTextRGBColor
+        {
+            double R = -1;
+            double G = -1;
+            double B = -1;
+        } RGBColor;
+        struct PdfTextCMYKColor
+        {
+            double C = -1;
+            double M = -1;
+            double Y = -1;
+            double K = -1;
+        } CMYKColor;
+    } TextColor;
 };
 
 struct PdfTextExtractParams
