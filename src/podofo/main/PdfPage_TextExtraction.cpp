@@ -419,6 +419,57 @@ void PdfPage::ExtractTextTo(vector<PdfTextEntry>& entries, const string_view& pa
                         context.States.Current->PdfState.TextColor.CMYKColor.K = content.Stack[0].GetReal();
                         break;
                     }
+                    case PdfOperator::sc:
+                    case PdfOperator::SC:
+                    case PdfOperator::scn:
+                    case PdfOperator::SCN:
+                    {
+                        context.States.Current->PdfState.TextColor.GrayColor.Gray = -1;
+                        context.States.Current->PdfState.TextColor.RGBColor.R = -1;
+                        context.States.Current->PdfState.TextColor.RGBColor.G = -1;
+                        context.States.Current->PdfState.TextColor.RGBColor.B = -1;
+                        context.States.Current->PdfState.TextColor.CMYKColor.C = -1;
+                        context.States.Current->PdfState.TextColor.CMYKColor.M = -1;
+                        context.States.Current->PdfState.TextColor.CMYKColor.Y = -1;
+                        context.States.Current->PdfState.TextColor.CMYKColor.K = -1;
+
+                        if (content.Stack.GetSize() == 1)
+                        {
+                            if (content.Stack[0].IsNumberOrReal())
+                            {
+                                context.States.Current->PdfState.TextColor.GrayColor.Gray = content.Stack[0].GetReal();
+                            }
+                        }
+                        else if (content.Stack.GetSize() == 3)
+                        {
+                            if ((content.Stack[0].IsNumberOrReal()
+                                && (content.Stack[1].IsNumberOrReal())
+                                && (content.Stack[2].IsNumberOrReal())))
+                            {
+                                context.States.Current->PdfState.TextColor.RGBColor.R = content.Stack[2].GetReal();
+                                context.States.Current->PdfState.TextColor.RGBColor.G = content.Stack[1].GetReal();
+                                context.States.Current->PdfState.TextColor.RGBColor.B = content.Stack[0].GetReal();
+                            }
+                        }
+                        else if (content.Stack.GetSize() == 4)
+                        {
+                            if ((content.Stack[0].IsNumberOrReal()
+                                && (content.Stack[1].IsNumberOrReal())
+                                && (content.Stack[2].IsNumberOrReal())
+                                && (content.Stack[3].IsNumberOrReal())))
+                            {
+                                context.States.Current->PdfState.TextColor.CMYKColor.C = content.Stack[3].GetReal();
+                                context.States.Current->PdfState.TextColor.CMYKColor.M = content.Stack[2].GetReal();
+                                context.States.Current->PdfState.TextColor.CMYKColor.Y = content.Stack[1].GetReal();
+                                context.States.Current->PdfState.TextColor.CMYKColor.K = content.Stack[0].GetReal();
+                            }
+                        }
+                        else
+                        {
+                            PoDoFo::LogMessage(PdfLogSeverity::Warning, "Invalid stack size for color operator");
+                        }
+                        break;
+                    }
                     default:
                     {
                         // Ignore all the other operators
