@@ -36,6 +36,11 @@ struct PdfTextEntry final
     double TextMatrix[6];
     double FontSize;
     std::string FontName;
+    double FontScale = 1;
+    double CharSpacing = 0;
+    double WordSpacing = 0;
+    double StringLength;
+    double LineSpacing;
     struct PdfTextColor
     {
         struct PdfTextGrayColor
