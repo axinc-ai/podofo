@@ -7,6 +7,8 @@
 #include "PdfDictionary.h"
 #include "PdfFilter.h"
 
+#include <podofo/auxiliary/AES.h>
+
 #include <boost/uuid/detail/md5.hpp>
 #include <boost/algorithm/hex.hpp>
 using boost::uuids::detail::md5;
@@ -33,6 +35,8 @@ PdfEncryptAlgorithm::RC4V2 |
 PdfEncryptAlgorithm::AESV2;
 #endif // PODOFO_HAVE_LIBIDN
 
+#define AES_IV_LENGTH 16
+
 static void MD5Final(unsigned char * dst, unsigned char *src){
     for (int i = 0; i < MD5_DIGEST_LENGTH; i+=4){
         dst[i + 0] = src [i + 3];
@@ -41,6 +45,7 @@ static void MD5Final(unsigned char * dst, unsigned char *src){
         dst[i + 3] = src [i + 0];
     }
 }
+
 
 /** A class that can encrypt/decrpyt streamed data block wise
  *  This is used in the input and output stream encryption implementation.
@@ -150,6 +155,104 @@ private:
     InputStream* m_InputStream;
     size_t m_inputLen;
     PdfRC4Stream m_stream;
+};
+
+/** A PdfAESInputStream that decrypts all data read
+ *  using the AES encryption algorithm
+ */
+class PdfAESInputStream : public InputStream
+{
+public:
+    PdfAESInputStream(InputStream& inputStream, size_t inputLen, unsigned char* key, unsigned keylen) :
+        m_InputStream(&inputStream),
+        m_inputLen(inputLen),
+        m_inputEof(false),
+        m_init(true),
+        m_keyLen(keylen),
+        m_drainLeft(0)
+    {
+        std::memcpy(this->m_key, key, keylen);
+    }
+
+protected:
+    size_t readBuffer(char* buffer, size_t len, bool& eof) override
+    {
+        int outlen = 0;
+        size_t read;
+
+        // if (m_inputEof)
+        //     goto DrainBuffer;
+
+        int rc;
+        if (m_init)
+        {
+            // Read the initialization vector separately first
+            char iv[AES_IV_LENGTH];
+            bool streameof;
+            read = ReadBuffer(*m_InputStream, iv, AES_IV_LENGTH, streameof);
+            if (read != AES_IV_LENGTH)
+                PODOFO_RAISE_ERROR_INFO(PdfErrorCode::UnexpectedEOF, "Can't read enough bytes for AES IV");
+
+            switch (m_keyLen)
+            {
+                case (size_t)PdfKeyLength::L128 / 8:
+                {
+                    m_aes = AES(AESKeyLength::AES_128);
+                    break;
+                }
+#ifdef PODOFO_HAVE_LIBIDN
+                case (size_t)PdfKeyLength::L256 / 8:
+                {
+                    m_aes = AES(AESKeyLength::AES_256);
+                    break;
+                }
+#endif
+                default:
+                    PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InternalLogic, "Invalid AES key length");
+            }
+
+            m_aes.DecryptCBCInit(m_key, (unsigned char*)iv);
+
+            m_inputLen -= AES_IV_LENGTH;
+            m_init = false;
+        }
+
+        bool streameof;
+        read = ReadBuffer(*m_InputStream, buffer, std::min(len, m_inputLen), streameof);
+        m_inputLen -= read;
+
+        unsigned char *tempBuffer = m_aes.DecryptCBC((unsigned char*)buffer, (unsigned int)read);
+        outlen = read;
+
+        PODOFO_ASSERT((size_t)outlen <= len);
+        std::memcpy(buffer, tempBuffer, (size_t)outlen);
+
+        delete[] tempBuffer;
+
+        if (m_inputLen == 0 || streameof)
+        {
+            uint8_t paddingLen = buffer[outlen - 1];
+            outlen -= paddingLen;
+
+            eof = true;
+            return outlen;
+        }
+
+        eof = false;
+        return outlen;
+    }
+
+private:
+    // EVP_CIPHER_CTX* m_ctx;
+    InputStream* m_InputStream;
+    size_t m_inputLen;
+    bool m_inputEof;
+    bool m_init;
+    unsigned char m_key[32];
+    unsigned m_keyLen;
+    vector<unsigned char> m_tempBuffer;
+    size_t m_drainLeft;
+    AES m_aes;
 };
 
 PoDoFo::PdfEncrypt::~PdfEncrypt()
@@ -268,8 +371,6 @@ std::unique_ptr<PdfEncrypt> PoDoFo::PdfEncrypt::CreateFromObject(const PdfObject
             PODOFO_RAISE_ERROR_INFO(PdfErrorCode::UnsupportedFilter, "Unsupported encryption method Version={} Revision={}", lV , rValue);
         }
     }
-
-    //PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
 }
 
 std::unique_ptr<PdfEncrypt> PoDoFo::PdfEncrypt::CreateFromEncrypt(const PdfEncrypt &rhs)
@@ -468,19 +569,24 @@ void PoDoFo::PdfEncryptSHABase::PreprocessPassword(const std::string_view &passw
 PoDoFo::PdfEncryptAESBase::~PdfEncryptAESBase()
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
 }
 
 PoDoFo::PdfEncryptAESBase::PdfEncryptAESBase()
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
 }
 
 void PoDoFo::PdfEncryptAESBase::BaseDecrypt(const unsigned char *key, unsigned keylen, const unsigned char *iv, const unsigned char *textin, size_t textlen, unsigned char *textout, size_t &textoutlen) const
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+
+    AES aes(AESKeyLength::AES_128);
+    unsigned char *tmp = aes.DecryptCBC(textin, textlen, key, iv);
+    uint8_t paddingLen = tmp[textlen - 1];
+    textoutlen = textlen - paddingLen;
+    std::memcpy(textout, tmp, textoutlen);
+
+    delete[] tmp;
 }
 
 void PoDoFo::PdfEncryptAESBase::BaseEncrypt(const unsigned char *key, unsigned keylen, const unsigned char *iv, const unsigned char *textin, size_t textlen, unsigned char *textout, size_t textoutlen) const
@@ -881,7 +987,29 @@ void PoDoFo::PdfEncryptMD5Base::CreateObjKey(unsigned char objkey[16], unsigned 
 PoDoFo::PdfEncryptAESV2::PdfEncryptAESV2(PdfString oValue, PdfString uValue, PdfPermissions pValue, bool bEncryptMetadata)
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+    m_pValue = pValue;
+    m_Algorithm = PdfEncryptAlgorithm::AESV2;
+
+    m_eKeyLength = PdfKeyLength::L128;
+    m_keyLength = (int)PdfKeyLength::L128 / 8;
+    m_rValue = 4;
+    m_EncryptMetadata = bEncryptMetadata;
+
+    auto& oValueData = oValue.GetRawData();
+    if (oValueData.size() < 32)
+        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InvalidEncryptionDict, "/O value is invalid");
+
+    auto& uValueData = uValue.GetRawData();
+    if (uValueData.size() < 32)
+        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InvalidEncryptionDict, "/U value is invalid");
+
+    std::memcpy(m_oValue, oValueData.data(), 32);
+    std::memcpy(m_uValue, uValueData.data(), 32);
+
+    // Init buffers
+    std::memset(m_rc4key, 0, 16);
+    std::memset(m_rc4last, 0, 256);
+    std::memset(m_encryptionKey, 0, 32);
 }
 
 PoDoFo::PdfEncryptAESV2::PdfEncryptAESV2(const std::string_view &userPassword, const std::string_view &ownerPassword, PdfPermissions protection)
@@ -899,7 +1027,10 @@ PoDoFo::PdfEncryptAESV2::PdfEncryptAESV2(const PdfEncrypt &rhs)
 std::unique_ptr<InputStream> PoDoFo::PdfEncryptAESV2::CreateEncryptionInputStream(InputStream &inputStream, size_t inputLen, const PdfReference &objref)
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+    unsigned char objkey[MD5_DIGEST_LENGTH];
+    unsigned keylen;
+    this->CreateObjKey(objkey, keylen, objref);
+    return unique_ptr<InputStream>(new PdfAESInputStream(inputStream, inputLen, objkey, keylen));
 }
 
 std::unique_ptr<OutputStream> PoDoFo::PdfEncryptAESV2::CreateEncryptionOutputStream(OutputStream &outputStream, const PdfReference &objref)
@@ -917,13 +1048,27 @@ void PoDoFo::PdfEncryptAESV2::Encrypt(const char *inStr, size_t inLen, const Pdf
 void PoDoFo::PdfEncryptAESV2::Decrypt(const char *inStr, size_t inLen, const PdfReference &objref, char *outStr, size_t &outLen) const
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+    unsigned char objkey[MD5_DIGEST_LENGTH];
+    unsigned keylen;
+    CreateObjKey(objkey, keylen, objref);
+
+    size_t offset = CalculateStreamOffset();
+    if (inLen <= offset)
+    {
+        // Is empty
+        outLen = 0;
+        return;
+    }
+
+    this->BaseDecrypt(objkey, keylen, (const unsigned char*)inStr,
+        (const unsigned char*)inStr + offset,
+        inLen - offset, (unsigned char*)outStr, outLen);
 }
 
 size_t PoDoFo::PdfEncryptAESV2::CalculateStreamOffset() const
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+    return AES_IV_LENGTH;
 }
 
 size_t PoDoFo::PdfEncryptAESV2::CalculateStreamLength(size_t length) const
@@ -941,7 +1086,33 @@ void PoDoFo::PdfEncryptAESV2::GenerateEncryptionKey(const std::string_view &docu
 bool PoDoFo::PdfEncryptAESV2::Authenticate(const std::string_view &password, const std::string_view &documentId)
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+    m_documentId = documentId;
+
+    // Pad password
+    unsigned char pswd[32];
+    PadPassword(password, pswd);
+
+    // Check password: 1) as user password, 2) as owner password
+    unsigned char userKey[32];
+    ComputeEncryptionKey(m_documentId, pswd, m_oValue, m_pValue, m_eKeyLength, m_rValue, userKey, m_EncryptMetadata);
+
+    bool success = CheckKey(userKey, m_uValue);
+    if (success)
+    {
+        m_userPass = password;
+    }
+    else
+    {
+        unsigned char userpswd[32];
+        ComputeOwnerKey(m_oValue, pswd, m_keyLength, m_rValue, true, userpswd);
+        ComputeEncryptionKey(m_documentId, userpswd, m_oValue, m_pValue, m_eKeyLength, m_rValue, userKey, m_EncryptMetadata);
+        success = CheckKey(userKey, m_uValue);
+
+        if (success)
+            m_ownerPass = password;
+    }
+
+    return success;
 }
 
 #ifdef PODOFO_HAVE_LIBIDN
