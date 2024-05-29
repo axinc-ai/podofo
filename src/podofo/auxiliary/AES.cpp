@@ -87,6 +87,30 @@ unsigned char *AES::DecryptCBC(const unsigned char in[], unsigned int inLen,
   return out;
 }
 
+//---
+void AES::DecryptCBCInit(const unsigned char key[],
+                         const unsigned char *iv) {
+  if (m_roundKeys != nullptr) {
+    delete[] m_roundKeys;
+  }
+  m_roundKeys = new unsigned char[4 * Nb * (Nr + 1)];
+  KeyExpansion(key, m_roundKeys);
+  memcpy(m_block, iv, blockBytesLen);
+}
+
+unsigned char *AES::DecryptCBC(const unsigned char in[], unsigned int inLen) {
+  CheckLength(inLen);
+  unsigned char *out = new unsigned char[inLen];
+  for (unsigned int i = 0; i < inLen; i += blockBytesLen) {
+    DecryptBlock(in + i, out + i, m_roundKeys);
+    XorBlocks(m_block, out + i, out + i, blockBytesLen);
+    memcpy(m_block, in + i, blockBytesLen);
+  }
+
+  return out;
+}
+//---
+
 unsigned char *AES::EncryptCFB(const unsigned char in[], unsigned int inLen,
                                const unsigned char key[],
                                const unsigned char *iv) {
