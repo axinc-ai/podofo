@@ -16,7 +16,10 @@ PdfCharCode::PdfCharCode()
 }
 
 PdfCharCode::PdfCharCode(unsigned code)
-    : Code(code), CodeSpaceSize(utls::GetCharCodeSize(code))
+    // : Code(code), CodeSpaceSize(utls::GetCharCodeSize(code))
+    // 日本語を書き込んだ場合に1バイトで表現できる文字数を超えて
+    // 不正な ToUnicode CMap が作成されてしまうため、2バイト固定で作成する
+    : Code(code), CodeSpaceSize(2)
 {
 }
 
