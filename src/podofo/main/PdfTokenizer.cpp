@@ -307,11 +307,18 @@ PdfTokenizer::PdfLiteralDataType PdfTokenizer::DetermineDataType(InputStreamDevi
             else if (dataType == PdfLiteralDataType::Number)
             {
                 int64_t num;
-                if (std::from_chars(token.data(), token.data() + token.size(), num).ec != std::errc())
+                auto result = std::from_chars(token.data(), token.data() + token.size(), num);
+                if (result.ec != std::errc())
                 {
-                    // Don't consume the token
-                    this->EnqueueToken(token, tokenType);
-                    PODOFO_RAISE_ERROR_INFO(PdfErrorCode::NoNumber, token);
+                    if (result.ec == std::errc::result_out_of_range) {
+                        PoDoFo::LogMessage(PdfLogSeverity::Warning, "The parsed value exceeds the range limits of the target data type.");
+                        variant = PdfVariant(0.0);
+                        return PdfLiteralDataType::Number;
+                    } else {
+                        // Don't consume the token
+                        this->EnqueueToken(token, tokenType);
+                        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::NoNumber, token);
+                    }
                 }
 
                 variant = PdfVariant(num);
