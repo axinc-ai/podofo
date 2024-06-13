@@ -376,7 +376,22 @@ std::unique_ptr<PdfEncrypt> PoDoFo::PdfEncrypt::CreateFromObject(const PdfObject
 std::unique_ptr<PdfEncrypt> PoDoFo::PdfEncrypt::CreateFromEncrypt(const PdfEncrypt &rhs)
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+
+    switch (rhs.m_Algorithm)
+    {
+        case PdfEncryptAlgorithm::RC4V1:
+        case PdfEncryptAlgorithm::RC4V2:
+            return unique_ptr<PdfEncrypt>(new PdfEncryptRC4(rhs));
+        case PdfEncryptAlgorithm::AESV2:
+            return unique_ptr<PdfEncrypt>(new PdfEncryptAESV2(rhs));
+#ifdef PODOFO_HAVE_LIBIDN
+        case PdfEncryptAlgorithm::AESV3:
+        case PdfEncryptAlgorithm::AESV3R6:
+            return unique_ptr<PdfEncrypt>(new PdfEncryptAESV3(rhs));
+#endif // PODOFO_HAVE_LIBIDN
+        default:
+            PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InvalidEnumValue, "Invalid algorithm");
+    }
 }
 
 PdfEncryptAlgorithm PoDoFo::PdfEncrypt::GetEnabledEncryptionAlgorithms()
@@ -400,7 +415,7 @@ bool PoDoFo::PdfEncrypt::IsEncryptionEnabled(PdfEncryptAlgorithm algorithm)
 void PoDoFo::PdfEncrypt::GenerateEncryptionKey(const PdfString &documentId)
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+    GenerateEncryptionKey(documentId.GetRawData());
 }
 
 bool PoDoFo::PdfEncrypt::Authenticate(const std::string_view &password, const PdfString &documentId)
@@ -466,7 +481,9 @@ int PoDoFo::PdfEncrypt::GetKeyLength() const
 void PoDoFo::PdfEncrypt::EncryptTo(charbuff &out, const bufferview &view, const PdfReference &objref) const
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+    size_t outputLen = this->CalculateStreamLength(view.size());
+    out.resize(outputLen);
+    this->Encrypt(view.data(), view.size(), objref, out.data(), outputLen);
 }
 
 void PoDoFo::PdfEncrypt::DecryptTo(charbuff &out, const bufferview &view, const PdfReference &objref) const
@@ -499,7 +516,18 @@ PoDoFo::PdfEncrypt::PdfEncrypt() :
 PoDoFo::PdfEncrypt::PdfEncrypt(const PdfEncrypt &rhs)
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+    m_Algorithm = rhs.m_Algorithm;
+    m_eKeyLength = rhs.m_eKeyLength;
+
+    m_pValue = rhs.m_pValue;
+    m_rValue = rhs.m_rValue;
+
+    m_keyLength = rhs.m_keyLength;
+
+    m_documentId = rhs.m_documentId;
+    m_userPass = rhs.m_userPass;
+    m_ownerPass = rhs.m_ownerPass;
+    m_EncryptMetadata = rhs.m_EncryptMetadata;
 }
 
 bool PoDoFo::PdfEncrypt::CheckKey(unsigned char key1[32], unsigned char key2[32])
@@ -667,22 +695,81 @@ PoDoFo::PdfEncryptMD5Base::PdfEncryptMD5Base() : m_rc4key{ }, m_rc4last{ }
     DUMP_API_CALL
 }
 
-PoDoFo::PdfEncryptMD5Base::PdfEncryptMD5Base(const PdfEncrypt &rhs)
+PoDoFo::PdfEncryptMD5Base::PdfEncryptMD5Base(const PdfEncrypt& rhs) : PdfEncrypt(rhs)
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+    const PdfEncrypt* ptr = &rhs;
+
+    std::memcpy(m_uValue, rhs.GetUValue(), sizeof(unsigned char) * 32);
+    std::memcpy(m_oValue, rhs.GetOValue(), sizeof(unsigned char) * 32);
+
+    std::memcpy(m_encryptionKey, rhs.GetEncryptionKey(), sizeof(unsigned char) * 16);
+
+    std::memcpy(m_rc4key, static_cast<const PdfEncryptMD5Base*>(ptr)->m_rc4key, sizeof(unsigned char) * 16);
+    std::memcpy(m_rc4last, static_cast<const PdfEncryptMD5Base*>(ptr)->m_rc4last, sizeof(unsigned char) * 256);
+    m_EncryptMetadata = static_cast<const PdfEncryptMD5Base*>(ptr)->m_EncryptMetadata;
 }
 
 void PoDoFo::PdfEncryptMD5Base::CreateEncryptionDictionary(PdfDictionary &dictionary) const
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+    dictionary.AddKey(PdfName::KeyFilter, PdfName("Standard"));
+
+    if (m_Algorithm == PdfEncryptAlgorithm::AESV2 || !m_EncryptMetadata)
+    {
+        PdfDictionary cf;
+        PdfDictionary stdCf;
+
+        if (m_Algorithm == PdfEncryptAlgorithm::RC4V2)
+            stdCf.AddKey("CFM", PdfName("V2"));
+        else
+            stdCf.AddKey("CFM", PdfName("AESV2"));
+        stdCf.AddKey("Length", static_cast<int64_t>(16));
+
+        dictionary.AddKey("O", PdfString::FromRaw({ reinterpret_cast<const char*>(this->GetOValue()), 32 }));
+        dictionary.AddKey("U", PdfString::FromRaw({ reinterpret_cast<const char*>(this->GetUValue()), 32 }));
+
+        stdCf.AddKey("AuthEvent", PdfName("DocOpen"));
+        cf.AddKey("StdCF", stdCf);
+
+        dictionary.AddKey("CF", cf);
+        dictionary.AddKey("StrF", PdfName("StdCF"));
+        dictionary.AddKey("StmF", PdfName("StdCF"));
+
+        dictionary.AddKey("V", static_cast<int64_t>(4));
+        dictionary.AddKey("R", static_cast<int64_t>(4));
+        dictionary.AddKey("Length", static_cast<int64_t>(128));
+        if (!m_EncryptMetadata)
+            dictionary.AddKey("EncryptMetadata", PdfVariant(false));
+    }
+    else if (m_Algorithm == PdfEncryptAlgorithm::RC4V1)
+    {
+        dictionary.AddKey("V", static_cast<int64_t>(1));
+        // Can be 2 or 3
+        dictionary.AddKey("R", static_cast<int64_t>(m_rValue));
+    }
+    else if (m_Algorithm == PdfEncryptAlgorithm::RC4V2)
+    {
+        dictionary.AddKey("V", static_cast<int64_t>(2));
+        dictionary.AddKey("R", static_cast<int64_t>(3));
+        dictionary.AddKey("Length", PdfVariant(static_cast<int64_t>(m_eKeyLength)));
+    }
+
+    dictionary.AddKey("O", PdfString::FromRaw({ reinterpret_cast<const char*>(this->GetOValue()), 32 }));
+    dictionary.AddKey("U", PdfString::FromRaw({ reinterpret_cast<const char*>(this->GetUValue()), 32 }));
+    dictionary.AddKey("P", PdfVariant(static_cast<int64_t>(this->GetPValue())));
 }
 
 PdfString PoDoFo::PdfEncryptMD5Base::GetMD5String(const unsigned char *buffer, unsigned length)
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+
+    char data[MD5_DIGEST_LENGTH] = "";
+
+    GetMD5Binary(buffer, length, reinterpret_cast<unsigned char*>(data));
+
+    return PdfString::FromRaw({ data, MD5_DIGEST_LENGTH });
+
 }
 
 void PoDoFo::PdfEncryptMD5Base::GetMD5Binary(const unsigned char *data, unsigned length, unsigned char *digest)
@@ -1206,9 +1293,9 @@ PoDoFo::PdfEncryptRC4::PdfEncryptRC4(const std::string_view &userPassword, const
 }
 
 PoDoFo::PdfEncryptRC4::PdfEncryptRC4(const PdfEncrypt &rhs)
+    : PdfEncryptMD5Base(rhs)
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
 }
 
 void PoDoFo::PdfEncryptRC4::Encrypt(const char *inStr, size_t inLen, const PdfReference &objref, char *outStr, size_t outLen) const
@@ -1259,7 +1346,21 @@ size_t PoDoFo::PdfEncryptRC4::CalculateStreamLength(size_t length) const
 void PoDoFo::PdfEncryptRC4::GenerateEncryptionKey(const std::string_view &documentId)
 {
     DUMP_API_CALL
-    PODOFO_RAISE_ERROR(PdfErrorCode::UnsupportedEncryptedFile);
+
+    unsigned char userpswd[32];
+    unsigned char ownerpswd[32];
+
+    // Pad passwords
+    PadPassword(m_userPass, userpswd);
+    PadPassword(m_ownerPass, ownerpswd);
+
+    // Compute O value
+    ComputeOwnerKey(userpswd, ownerpswd, m_keyLength, m_rValue, false, m_oValue);
+
+    // Compute encryption key and U value
+    m_documentId = documentId;
+    ComputeEncryptionKey(m_documentId, userpswd,
+        m_oValue, m_pValue, m_eKeyLength, m_rValue, m_uValue, m_EncryptMetadata);
 }
 
 bool PoDoFo::PdfEncryptRC4::Authenticate(const std::string_view &password, const std::string_view &documentId)
