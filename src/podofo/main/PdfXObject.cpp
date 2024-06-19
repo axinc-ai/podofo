@@ -66,10 +66,7 @@ bool PdfXObject::tryCreateFromObject(const PdfObject& obj, PdfXObjectType xobjTy
     const PdfDictionary* dict;
     const PdfObject* typeObj;
     const PdfName* name;
-    if (!obj.TryGetDictionary(dict)
-        || (typeObj = dict->GetKey(PdfName::KeyType)) == nullptr
-        || !typeObj->TryGetName(name)
-        || name->GetString() != "XObject")
+    if (!obj.TryGetDictionary(dict))
     {
         xobj = nullptr;
         return false;
