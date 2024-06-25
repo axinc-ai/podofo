@@ -330,6 +330,8 @@ public:
     const UsedGIDsMap& GetUsedGIDs() const { return m_SubsetGIDs; }
 
     PdfObject& GetDescendantFontObject();
+    
+    unsigned int GetSubsetGIDsSize();
 
 protected:
     void EmbedFontFile(PdfObject& descriptor);
