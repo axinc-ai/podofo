@@ -216,7 +216,6 @@ public:
 
     const PdfEncrypt* GetEncrypt() const override;
 
-protected:
     /** Set the PDF Version of the document. Has to be called before Write() to
      *  have an effect.
      *  \param version  version of the pdf document
