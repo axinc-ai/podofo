@@ -335,8 +335,7 @@ void PdfEncoding::ExportToFont(PdfFont& font, PdfEncodingExportFlags flags) cons
             // NOTE: Setting the CIDSystemInfo params in the CMap stream object is required
             cmapObj.GetDictionary().AddKeyIndirect("CIDSystemInfo", cidSystemInfo);
 
-            writeCIDMapping(cmapObj, GetFont(), fontName);
-            fontDict.AddKeyIndirect("Encoding", cmapObj);
+            fontDict.AddKey("Encoding", PdfObject(PdfName("Identity-H")));
         }
     }
     else
