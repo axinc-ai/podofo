@@ -778,10 +778,6 @@ bool PdfFont::tryConvertToGIDs(const std::string_view& utf8Str, PdfGlyphAccess a
     return success;
 }
 
-unsigned int PdfFont::GetSubsetGIDsSize() {
-    return m_SubsetGIDs.size();
-}
-
 bool PdfFont::tryAddSubsetGID(unsigned gid, const unicodeview& codePoints, PdfCID& cid)
 {
     (void)codePoints;
