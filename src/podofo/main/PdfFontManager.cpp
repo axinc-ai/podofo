@@ -217,32 +217,6 @@ PdfFont& PdfFontManager::GetOrCreateFont(const string_view& fontPath, unsigned f
     return ret;
 }
 
-PdfFont& PdfFontManager::GetOrCreateFontWithFontIndex(unsigned int fontIndex, const string_view& fontPath, const PdfFontCreateParams& params)
-{
-    return GetOrCreateFontWithFontIndex(fontIndex, fontPath, 0, params);
-}
-
-PdfFont& PdfFontManager::GetOrCreateFontWithFontIndex(unsigned int fontIndex, const string_view& fontPath, unsigned faceIndex, const PdfFontCreateParams& params)
-{
-    // NOTE: Canonical seems to handle also case insensitive paths,
-    // converting them to actual casing
-    auto normalizedPathAndFontIndex = fs::canonical(fs::u8path(fontPath)).u8string() + "." + std::to_string(fontIndex);
-    auto found = m_cachedPaths.find(normalizedPathAndFontIndex);
-    if (found != m_cachedPaths.end())
-        return *found->second;
-
-    unique_ptr<charbuff> data;
-    auto face = getFontFaceFromFile(fontPath, faceIndex, data);
-    if (face == nullptr)
-        PODOFO_RAISE_ERROR_INFO(PdfErrorCode::InvalidFontData, "Could not parse a valid font from path {}", fontPath);
-
-    shared_ptr<PdfFontMetrics> metrics(new PdfFontMetricsFreetype(face, std::move(data)));
-    metrics->SetFilePath(string(fontPath), faceIndex);
-    auto& ret = getOrCreateFontHashedWithFontIndex(fontIndex, metrics, params);
-    m_cachedPaths[std::move(normalizedPathAndFontIndex)] = &ret;
-    return ret;
-}
-
 PdfFont& PdfFontManager::GetOrCreateFontFromBuffer(const bufferview& buffer, const PdfFontCreateParams& createParams)
 {
     return GetOrCreateFontFromBuffer(buffer, 0, createParams);
@@ -264,27 +238,6 @@ PdfFont& PdfFontManager::getOrCreateFontHashed(const shared_ptr<PdfFontMetrics>&
     // TODO: Create a map indexed only on the hash of the font data
     // and search on that. Then remove the following
     Descriptor descriptor(metrics->GetFontNameSafe(),
-        PdfStandard14FontType::Unknown,
-        params.Encoding,
-        true,
-        metrics->GetStyle());
-    auto& fonts = m_cachedQueries[descriptor];
-    if (fonts.size() != 0)
-        return *fonts[0];
-
-    auto newfont = PdfFont::Create(*m_doc, metrics, params);
-    return *addImported(fonts, std::move(newfont));
-}
-
-PdfFont& PdfFontManager::getOrCreateFontHashedWithFontIndex(unsigned int fontIndex, const shared_ptr<PdfFontMetrics>& metrics, const PdfFontCreateParams& params)
-{
-    // TODO: Create a map indexed only on the hash of the font data
-    // and search on that. Then remove the following
-    auto fontname = metrics->GetFontNameSafe();
-    std::string temp = std::string(fontname);
-    temp += std::to_string(fontIndex);    
-    std::string_view newfontname = temp;
-    Descriptor descriptor(newfontname,
         PdfStandard14FontType::Unknown,
         params.Encoding,
         true,

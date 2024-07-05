@@ -85,12 +85,6 @@ public:
     PdfFont& GetOrCreateFont(const std::string_view& fontPath,
         const PdfFontCreateParams& params = { });
 
-    PdfFont& GetOrCreateFontWithFontIndex(unsigned int fontIndex, const std::string_view& fontPath, unsigned faceIndex,
-        const PdfFontCreateParams& params = { });
-
-    PdfFont& GetOrCreateFontWithFontIndex(unsigned int fontIndex, const std::string_view& fontPath,
-        const PdfFontCreateParams& params = { });
-
     PdfFont& GetOrCreateFontFromBuffer(const bufferview& buffer,
         const PdfFontCreateParams& params = { });
 
@@ -208,7 +202,6 @@ private:
         PdfFontSearchParams& searchParams);
     PdfFont* addImported(std::vector<PdfFont*>& fonts, std::unique_ptr<PdfFont>&& font);
     PdfFont& getOrCreateFontHashed(const std::shared_ptr<PdfFontMetrics>& metrics, const PdfFontCreateParams& params);
-    PdfFont& getOrCreateFontHashedWithFontIndex(unsigned int fontIndex, const std::shared_ptr<PdfFontMetrics>& metrics, const PdfFontCreateParams& params);
 
 #if defined(_WIN32) && defined(PODOFO_HAVE_WIN32GDI)
     static std::unique_ptr<charbuff> getWin32FontData(const std::string_view& fontName,
